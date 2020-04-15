@@ -1,1 +1,0 @@
-# richards.6
