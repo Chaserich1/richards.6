@@ -1,0 +1,44 @@
+Author: Chase Richards
+Project: CS4760 - Homework 6
+Filename: README  
+Date: April 16, 2020
+
+-------------------------------------------------------------------------------
+
+How to Compile and Run (without typing "./" before the executable):
+
+$ make
+$ export PATH="$PATH:."
+
+To Run (Default option values or using options):
+
+$ ./
+or
+$ ./
+
+To remove all .o, .dat and the executables:
+
+$ make clean
+
+--------------------------------------------------------------------------------
+
+File Change Log in project directory:
+ChangeLog.log
+
+You can also see what changed in the files at:
+https://github.com/Chaserich1/richards.6
+
+--------------------------------------------------------------------------------
+
+Comments:
+
+  
+
+--------------------------------------------------------------------------------
+
+Additional Project Information:
+
+
+
+-------------------------------------------------------------------------------
+
