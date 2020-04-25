@@ -90,9 +90,29 @@ clksim nextProcessStartTime(clksim maxTime, clksim curTime);
 
 /* ------------------------------------Paging Setup----------------------------------------- */
 
+//Page struct
+typedef struct 
+{
+    int locationOfFrame;
+} page;
+
+//Frame Struct
+typedef struct
+{
+    int process;
+    unsigned referenceBit: 8;
+    unsigned dirtyBit: 1;
+} frameTable;
+
+//Page table struct
+typedef struct
+{
+    page pageArr[32]; //32 pages in the page array
+} pageTable;
 
 //Prototypes for printing table
 /*void printAllocatedTable(int allocated2D[18][20], int processes, int resources);
 void printTable(resDesc resDescPtr, int processes, int resources); 
 */
+
 #endif
