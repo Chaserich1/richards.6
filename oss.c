@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 }
 
 /* Does the fork, exec and handles the messaging to and from user */
-void manager(int maxProcsInSys, int memoryAccess)
+void manager(int maxProcsInSys, int memoryScheme)
 {
     filePtr = openLogFile(outputLog); //open the output file
     
@@ -100,7 +100,9 @@ void manager(int maxProcsInSys, int memoryAccess)
     int pid; //actual pid
     char msgqSegmentStr[10]; //for execing to the child
     char procPidStr[3]; //for execing the generated pid to child
+    char schemeStr[2]; //for execing the scheme to child
     sprintf(msgqSegmentStr, "%d", msgqSegment);
+    sprintf(schemeStr, "%d", memoryScheme);
     //Array of the pids in the generated pids index, initialized to -1 for available
     int *pidArr;
     pidArr = (int *)malloc(sizeof(int) * maxProcsInSys);
@@ -135,7 +137,7 @@ void manager(int maxProcsInSys, int memoryAccess)
             }
             else if(pid == 0)
             {
-                processExec = execl("./user", "user", msgqSegmentStr, procPidStr, (char *)NULL);
+                processExec = execl("./user", "user", msgqSegmentStr, procPidStr, schemeStr, (char *)NULL);
                 if(processExec < 0)
                 {
                     perror("oss: Error: Failed to execl\n");
@@ -190,11 +192,11 @@ clksim nextProcessStartTime(clksim maxTimeBetweenProcs, clksim curTime)
 }
 
 /* For sending the message to the processes */
-void messageToProcess(int receiver, int response)
+void messageToProcess(int receivingProcess, int response)
 {
     int sendmessage;
     //Process is -1 because we didn't generate one, no resource, oss is sending process of 1
-    msg message = {.typeofMsg = receiver, .msgDetails = response, .process = -1, .resource = -1, .processesPid = 1};
+    msg message = {.typeofMsg = receivingProcess, .msgDetails = response, .process = -1, .address = -1};
     
     //Send the message and check for failure
     sendmessage = msgsnd(msgqSegment, &message, sizeof(msg), 0);

@@ -29,6 +29,7 @@ FILE* filePtr; //output file
 void manager(int, int); //resource manager
 int generateProcPid(int *pidArr, int totalPids); //Generates the pid (0,1,2,3,4,..17) 
 void printStats(); //printing the final statistics
+int firstScheme(); //Random value between 0 and 32k
 
 //Shared memory keys and shared memory segment ids
 const key_t clockKey = 202123;
@@ -37,21 +38,19 @@ int clockSegment, msgqSegment;
 
 /* ---------------------------------Messaging Setup-------------------------------------- */
 
-/* Message structure that includes the type of message (1 for oss), the real and generated pids,
-   the specific resource for release or request, and message details which says whether the process
-   is requesting, releasing, or terminating. For oss it says whether it is granting or denying */
+/* Message structure that includes the type of message, the pid, the address, and message details 
+   which says whether it is read, write or terminating */
 typedef struct
 {
     long typeofMsg;
-    int process;
-    int processesPid;
-    int resource;
     int msgDetails;
+    int process;
+    int address;
 } msg;
 
 //Prototypes for different messages to and from oss and user
-void messageToProcess(int receiver, int response);
-void terminateToOss(int process, int procPid);
+void messageToProcess(int, int);
+void messageToOss(int, int, int);
 
 /* ------------------------------Simulated Clock Setup----------------------------------- */
 
