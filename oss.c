@@ -47,14 +47,14 @@ int main(int argc, char* argv[])
        children if the user enters ctrl-c */
     signal(SIGINT, sigHandler);  
     
-    manager(n, verbose); //Call scheduler function
+    manager(n, m); //Call scheduler function
     removeAllMem(); //Remove all shared memory, message queue, kill children, close file
 
     return 0;
 }
 
 /* Does the fork, exec and handles the messaging to and from user */
-void manager(int maxProcsInSys, int verbose)
+void manager(int maxProcsInSys, int memoryAccess)
 {
     filePtr = openLogFile(outputLog); //open the output file
     
