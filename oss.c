@@ -5,19 +5,13 @@
 
 #include "oss.h"
 
-//Stats
-int granted = 0;
-int normalTerminations = 0;
-int deadlockTerminations = 0;
-int deadlockAlgRuns = 0;
-int totalCounter = 0;
 char *outputLog = "logOutput.dat";
 
 int main(int argc, char* argv[])
 {
     int c;
     int n = 18; //Max Children in system at once
-    int m = 0;
+    int m = 1;
     srand(time(0));
     while((c = getopt(argc, argv, "hn:m:")) != -1)
     {
@@ -79,7 +73,7 @@ void manager(int maxProcsInSys, int memoryAccess)
  
     /* Constant for the time between each new process and the time for
        spawning the next process, initially spawning one process */   
-    clksim maxTimeBetweenNewProcesses = {.sec = 0, .nanosec = 500000000};
+    clksim maxTimeBetweenNewProcesses = {.sec = 0, .nanosec = 500000};
     clksim spawnNextProc = {.sec = 0, .nanosec = 0};
 
     /* Create the message queue */
@@ -98,12 +92,10 @@ void manager(int maxProcsInSys, int memoryAccess)
     int procCounter = 0; //Counts the processes
 
     //Statistics
-    int granted1;
     int totalProcs = 0;
 
     int i; //For loops
     int processExec; //exec  nd check for failurei
-    int deadlockDetector = 0; //deadlock flag
     int procPid; //generated pid
     int pid; //actual pid
     char msgqSegmentStr[10]; //for execing to the child
@@ -116,14 +108,14 @@ void manager(int maxProcsInSys, int memoryAccess)
         pidArr[i] = -1;
 
     //Printing the inital allocated matrix showing that nothing is allocated
-    fprintf(filePtr, "Program Starting - No Resources Allocated to Processes: \n");
-    printTable((*resDescPtr), maxProcsInSys, 20);
-    outputLines += 20;
+    fprintf(filePtr, "Program Starting\n");
+    outputLines++;
 
+    printf("ProcCounter: %d", procCounter);
     //Loop runs constantly until it has to terminate
-    while(1)
+    while(procCounter <= 2)
     {
-        //Only 18 processes in the system at once and spawn random between 0 and 5000000000
+        //Only 18 processes in the system at once and spawn random between 0 and 500000
         if((procCounter < maxProcsInSys) && ((clockPtr-> sec > spawnNextProc.sec) || (clockPtr-> sec == spawnNextProc.sec && clockPtr-> nanosec >= spawnNextProc.nanosec)))
         {
             procPid = generateProcPid(pidArr, maxProcsInSys);
@@ -158,13 +150,13 @@ void manager(int maxProcsInSys, int memoryAccess)
             //Get the time for the next process to run
             spawnNextProc = nextProcessStartTime(maxTimeBetweenNewProcesses, (*clockPtr));
    
-            
+            clockIncrementor(clockPtr, 1000000); 
                 
-            }
+            
         }
         else if((msgrcv(msgqSegment, &message, sizeof(msg), 1, IPC_NOWAIT)) > 0) 
         {
-
+            fprintf(filePtr, "Tster\n");
         } 
     }    
     
@@ -244,12 +236,13 @@ void printAllocatedTable(int allocated2D[18][20], int processes, int resources)
     return;
 }
 
-/* Function for printing the allocated values (will be called roughly every 20 granted requests */
+/* Function for printing the allocated values (will be called roughly every 20 granted requests)
 void printTable(resDesc resDescPtr, int processes, int resources)
 {
     printAllocatedTable(resDescPtr.allocated2D, processes, resources);
     return;
 }
+*/
 
 /* Open the log file that contains the output and check for failure */
 FILE *openLogFile(char *file)
@@ -266,7 +259,7 @@ FILE *openLogFile(char *file)
 /* When there is a failure, call this to make sure all memory is removed */
 void removeAllMem()
 {
-    shmctl(resDescSegment, IPC_RMID, NULL);   
+    //shmctl(resDescSegment, IPC_RMID, NULL);   
     shmctl(clockSegment, IPC_RMID, NULL);
     msgctl(msgqSegment, IPC_RMID, NULL);
     sem_unlink("semOss");
@@ -276,7 +269,7 @@ void removeAllMem()
     exit(EXIT_SUCCESS);
 } 
 
-/* Print the final statistics to the console and the end of the file - will be called in signal handler */
+/* Print the final statistics to the console and the end of the file - will be called in signal handler
 void printStats()
 {
     printf("Total Granted Requests: %d\n", granted);
@@ -285,12 +278,13 @@ void printStats()
     printf("Total Deadlock Terminations: %d\n", deadlockTerminations);
     printf("Pecentage of processes in deadlock that had to terminate on avg: %d%\n", divideNums(deadlockTerminations, totalCounter));
 }
+*/
 
 /* Signal handler, that looks to see if the signal is for 2 seconds being up or ctrl-c being entered.
    In both cases, print the final statistics and remove all of the memory, semaphores, and message queues */
 void sigHandler(int sig)
 {
-    printStats();
+    //printStats();
     if(sig == SIGALRM)
     {
         //printStats();

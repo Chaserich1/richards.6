@@ -35,11 +35,14 @@ int main(int argc, char *argv[])
     //Random 
     srand(time(0));
     
-    //Continuous loop until it's time to terminate
+    printf("Child");
+
+    /*Continuous loop until it's time to terminate
     while(1)
     {
         
     }
+    */
     return 0;
 }
 

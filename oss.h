@@ -93,7 +93,7 @@ clksim nextProcessStartTime(clksim maxTime, clksim curTime);
 
 
 //Prototypes for printing table
-void printAllocatedTable(int allocated2D[18][20], int processes, int resources);
+/*void printAllocatedTable(int allocated2D[18][20], int processes, int resources);
 void printTable(resDesc resDescPtr, int processes, int resources); 
-
+*/
 #endif
