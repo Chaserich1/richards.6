@@ -39,16 +39,28 @@ int main(int argc, char *argv[])
  
     //Random 
     srand(time(0));
-
-    /*Continuous loop until it's time to terminate
+    int randMemRefCheck = (rand() % (1100 - 900 + 1)) + 900;
+    //Continuous loop until it's time to terminate
     while(1)
     {
-        
+        memReferences++;  //Increment the number of memory references
+        //Every 1000 +- 100 memory references check if it should terminate
+        if(memReferences % randMemRefCheck == 0)
+        {
+            //Random value to check if it should terminate
+            if(rand() % 10 > 4)
+            {
+                //Send termination message to oss and actually terminate
+                messageToOss(procPid, 0, 2);
+                return 0;               
+            }
+        }   
+     
+        //Read or write with bias towards read
+        int readOrWrite = rand() % 5 > 0 ? 0 : 1;
+        //Send the message to Oss with the first scheme 
+        messageToOss(procPid, firstScheme(), readOrWrite);
     }
-    */
-
-    messageToOss(procPid, firstScheme(), 0);
-
     return 0;
 }
 
