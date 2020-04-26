@@ -93,8 +93,10 @@ void manager(int maxProcsInSys, int memoryScheme)
 
     //Statistics
     int totalProcs = 0;
+    int memAccesses = 0;
+    int pageFaults = 0;
 
-    int i; //For loops
+    int i, j; //For loops
     int processExec; //exec  nd check for failurei
     int procPid; //generated pid
     int pid; //actual pid
@@ -108,6 +110,26 @@ void manager(int maxProcsInSys, int memoryScheme)
     pidArr = (int *)malloc(sizeof(int) * maxProcsInSys);
     for(i = 0; i < maxProcsInSys; i++)
         pidArr[i] = -1;
+
+    //Allocate the frame table as an array
+    frameTable *frameT = (frameTable *)malloc(sizeof(frameTable) * 256);
+    //Initialize the frame table
+    for(i = 0; i < 256; i++)
+    {
+        //Not occupied yet
+        frameT[i].referenceBit = 0x0;
+        frameT[i].dirtyBit = 0x0;
+        frameT[i].process = -1;
+    }
+    //Allocate the page tables as an array
+    pageTable *pageT = (pageTable *)malloc(sizeof(pageTable) * maxProcsInSys);
+    //Initialize the page tables
+    for(i = 0; i < 18; i++)
+    {
+        for(j = 0; j < 32; j++)
+            pageT[i].pageArr[j].locationOfFrame = -1;
+    }
+   
 
     //Printing the inital allocated matrix showing that nothing is allocated
     fprintf(filePtr, "Program Starting\n");
@@ -158,7 +180,11 @@ void manager(int maxProcsInSys, int memoryScheme)
         }
         else if((msgrcv(msgqSegment, &message, sizeof(msg), 1, IPC_NOWAIT)) > 0) 
         {
-            fprintf(filePtr, "Tster\n");
+            //Increment the clock for the read/write operation
+            clockIncrementor(clockPtr, 15);
+            memAccesses++;
+            //Check to see if the frame is available in the page table
+            
         } 
     }    
     
