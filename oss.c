@@ -184,7 +184,93 @@ void manager(int maxProcsInSys, int memoryScheme)
             clockIncrementor(clockPtr, 15);
             memAccesses++;
             //Check to see if the frame is available in the page table
-            
+            int frameLocation = pageT[message.process].pageArr[message.address / 1024].locationOfFrame;
+            //The message will either be 0,1,2 (read,write,or terminate)
+            int receivedMessage = message.msgDetails;   
+            //If the message is to terminate
+            if(receivedMessage == 2)
+            {
+                int k;
+                //Since we are terminating make the pid available again for a new process
+                int process = pidArr[message.process];
+                pidArr[message.process] = -1;
+                //Make the frames and page table available again for others
+                for(k = 0; k < 256; k++)
+                {
+                    //Reset the reference bit, dirty bit, and make the frame available
+                    if(frameT[k].process == message.process)
+                    {
+                        frameT[k].referenceBit = 0x0;
+                        frameT[k].dirtyBit = 0x0;
+                        frameT[k].process = -1;
+                    }
+                }
+                for(k = 0; k < 32; k++)
+                {
+                    pageT[message.process].pageArr[k].locationOfFrame = -1;
+                }
+                //Decrement the procs in system
+                procCounter--;
+                //Wait for the process
+                waitpid(process, NULL, 0);
+                //Output to the file that the process terminated
+                if(outputLines < 100000)
+                {
+                    fprintf(filePtr, "P%d terminated at time %d:%09d\n", message.process, clockPtr-> sec, clockPtr-> nanosec);
+                }               
+            }
+            //If it's not terminating, it's either read or write
+            else
+            {
+                //If it's a read print to output file its requesting read
+                if(receivedMessage == 0)
+                {
+                    fprintf(filePtr, "P%d requesting read of address %d at time %d:%09d\n", message.process, message.address, clockPtr-> sec, clockPtr-> nanosec);
+                }
+                //Otherwise it's a write so print that to output file
+                else
+                {
+                    fprintf(filePtr, "P%d requesting write of address %d at time %d:%09d\n", message.process, message.address, clockPtr-> sec, clockPtr-> nanosec);
+                }
+                
+                //Let's say there is no page fault (always granted for now)
+                if(frameT[frameLocation].process == message.process && frameLocation != -1)
+                {
+                    //If it was a read skip the dirty bit change
+                    if(receivedMessage == 0)
+                    {
+                        if(outputLines < 100000)
+                        {
+                            fprintf(filePtr, "Address %d in frame %d, giving data to P%d at time %d:%09d\n", message.address, frameLocation, message.process, clockPtr-> sec, clockPtr-> nanosec);
+                        }
+                        //Set the reference bit to 1
+                        frameT[frameLocation].referenceBit = 0x1;
+                    }
+                    //Otherwise it was a write, so also set the dirty bit
+                    else
+                    {
+                        //Output file the address and frame being giving to which process
+                        if(outputLines < 100000)
+                        {
+                            fprintf(filePtr, "Address %d in frame %d, writing data by P%d at time %d:%09d\n", message.address, frameLocation, message.process, clockPtr-> sec, clockPtr-> nanosec);
+                        }
+                        //Set the reference bit to 1
+                        frameT[frameLocation].referenceBit = 0x1;
+                        //Since it was a write we also need to set the dirty bit
+                        frameT[frameLocation].dirtyBit = 0x1;
+                        //Log that we changed the dirty bit to the output file
+                        if(outputLines < 100000)
+                        {
+                            fprintf(filePtr, "Dirty bit of frame %d set, adding additional time to the clock\n", frameLocation);
+                        }         
+                        //Increment the clock for the dirty bit change
+                        clockIncrementor(clockPtr, 12);
+                    }
+                    //Increment the clock for no page fault - less than page fault obviously
+                    clockIncrementor(clockPtr, 10);
+                }
+                //If there is a page fault
+            }
         } 
     }    
     
