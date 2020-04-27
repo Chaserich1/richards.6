@@ -137,7 +137,7 @@ void manager(int maxProcsInSys, int memoryScheme)
 
     printf("ProcCounter: %d", procCounter);
     //Loop runs constantly until it has to terminate
-    while(procCounter <= 2)
+    while(totalProcs <= 100)
     {
         //Only 18 processes in the system at once and spawn random between 0 and 500000
         if((procCounter < maxProcsInSys) && ((clockPtr-> sec > spawnNextProc.sec) || (clockPtr-> sec == spawnNextProc.sec && clockPtr-> nanosec >= spawnNextProc.nanosec)))
@@ -174,10 +174,11 @@ void manager(int maxProcsInSys, int memoryScheme)
             //Get the time for the next process to run
             spawnNextProc = nextProcessStartTime(maxTimeBetweenNewProcesses, (*clockPtr));
    
-            clockIncrementor(clockPtr, 1000000); 
-                
-            
+            clockIncrementor(clockPtr, 1000000);  
         }
+        /* Receive a message from a process, if it is non zero, return immediately,
+           if it is zero wait for a message of the oss type to be placed on the queue 
+           and handle the message depending on if it is read, write or terminate */
         else if((msgrcv(msgqSegment, &message, sizeof(msg), 1, IPC_NOWAIT)) > 0) 
         {
             //Increment the clock for the read/write operation
