@@ -43,9 +43,9 @@ int clockSegment, msgqSegment;
 typedef struct
 {
     long typeofMsg;
-    int msgDetails;
     int process;
     int address;
+    int msgDetails;
 } msg;
 
 //Prototypes for different messages to and from oss and user

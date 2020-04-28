@@ -52,8 +52,6 @@ void manager(int maxProcsInSys, int memoryScheme)
 {
     filePtr = openLogFile(outputLog); //open the output file
     
-    int receivedMsg; //Recieved from child telling scheduler what to do
-    
     /* Create the simulated clock in shared memory */
     clksim *clockPtr;
     clockSegment = shmget(clockKey, sizeof(clksim), IPC_CREAT | 0666);
@@ -85,8 +83,8 @@ void manager(int maxProcsInSys, int memoryScheme)
     }
     msg message;
 
-    sem_t *sem;
-    char *semaphoreName = "semOss";
+    //sem_t *sem;
+    //char *semaphoreName = "semOss";
 
     int outputLines = 0; //Counts the lines written to file to make sure we don't have an infinite loop
     int procCounter = 0; //Counts the processes
@@ -131,13 +129,12 @@ void manager(int maxProcsInSys, int memoryScheme)
     }
    
 
-    //Printing the inital allocated matrix showing that nothing is allocated
-    fprintf(filePtr, "Program Starting\n");
-    outputLines++;
+    //Printing starting
+    printf("Program Starting\n");
 
-    printf("ProcCounter: %d", procCounter);
+    //printf("ProcCounter: %d", procCounter);
     //Loop runs constantly until it has to terminate
-    while(totalProcs <= 100)
+    while(totalProcs <= 100)/* totalProcs <= 100 */
     {
         //Only 18 processes in the system at once and spawn random between 0 and 500000
         if((procCounter < maxProcsInSys) && ((clockPtr-> sec > spawnNextProc.sec) || (clockPtr-> sec == spawnNextProc.sec && clockPtr-> nanosec >= spawnNextProc.nanosec)))
@@ -179,8 +176,9 @@ void manager(int maxProcsInSys, int memoryScheme)
         /* Receive a message from a process, if it is non zero, return immediately,
            if it is zero wait for a message of the oss type to be placed on the queue 
            and handle the message depending on if it is read, write or terminate */
-        else if((msgrcv(msgqSegment, &message, sizeof(msg), 1, IPC_NOWAIT)) > 0) 
+        else if((msgrcv(msgqSegment, &message, sizeof(msg), 20, IPC_NOWAIT)) > 0) 
         {
+            //printf("%d\n", message.msgDetails);
             //Increment the clock for the read/write operation
             clockIncrementor(clockPtr, 15);
             memAccesses++;
@@ -282,6 +280,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                     if(frameLocation == -1)
                     {
                         printf("No Frames Available\n");
+                        
                     }
                     //Insert the frame in the available location
                     else
@@ -317,9 +316,14 @@ void manager(int maxProcsInSys, int memoryScheme)
                 outputLines += 258;
             }
         }
+        //Increment the clock
+        clockIncrementor(clockPtr, 10);
 
     }    
-    
+
+    fclose(filePtr);
+    shmctl(clockSegment, IPC_RMID, NULL);
+    msgctl(msgqSegment, IPC_RMID, NULL);   
     
     return;  
 }

@@ -6,10 +6,9 @@
 #include "oss.h"
 
 int msgqSegment;
+
 int main(int argc, char *argv[])
 {
-    msg message;
-   
     clksim *clockPtr;    
  
     /* Get and attach to the clock simulation shared memory */
@@ -40,6 +39,7 @@ int main(int argc, char *argv[])
     //Random 
     srand(time(0));
     int randMemRefCheck = (rand() % (1100 - 900 + 1)) + 900;
+    
     //Continuous loop until it's time to terminate
     while(1)
     {
@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
      
         //Read or write with bias towards read
         int readOrWrite = rand() % 5 > 0 ? 0 : 1;
+        
         //Send the message to Oss with the first scheme 
         messageToOss(procPid, firstScheme(), readOrWrite);
     }
@@ -69,7 +70,7 @@ void messageToOss(int curProcess, int address, int details)
 {
     int sendmessage;
     /* Send the message to oss with type 1 and it's a request */
-    msg message = {.typeofMsg = 20, .msgDetails = 2, .process = curProcess, .address = address};
+    msg message = {.typeofMsg = 20, .process = curProcess, .address = address, .msgDetails = details};
     
     /* Send the message and check for failure */
     sendmessage = msgsnd(msgqSegment, &message, sizeof(msg), 0);
