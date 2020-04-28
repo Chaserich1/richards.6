@@ -263,6 +263,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                         if(outputLines < 100000)
                         {
                             fprintf(filePtr, "Dirty bit of frame %d set, adding additional time to the clock\n", frameLocation);
+                            outputLines++;
                         }         
                         //Increment the clock for the dirty bit change
                         clockIncrementor(clockPtr, 12);
@@ -271,8 +272,52 @@ void manager(int maxProcsInSys, int memoryScheme)
                     clockIncrementor(clockPtr, 10);
                 }
                 //If there is a page fault
+                else
+                {
+                    //increment the page fault stat
+                    pageFaults++;
+                    //Returns the available frame if there is one otherwise -1
+                    int frameLocation = findAvailFrame(frameT);
+                    //If there are none available we have to do second chance algorithm to replace
+                    if(frameLocation == -1)
+                    {
+                        printf("No Frames Available\n");
+                    }
+                    //Insert the frame in the available location
+                    else
+                    {
+                        if(outputLines < 100000)
+                        {
+                            fprintf(filePtr, "Inserting P%d page into frame %d\n", message.process, frameLocation);
+                            outputLines++;
+                        }
+                        //Insert the frame and set the reference bit
+                        frameT[frameLocation].process = message.process;
+                        frameT[frameLocation].referenceBit = 0x80;
+                        //Set the dirty bit according to read or write
+                        if(receivedMessage == 0)
+                            frameT[frameLocation].dirtyBit = 0x0; //read
+                        else
+                            frameT[frameLocation].dirtyBit = 0x1; //write
+                        //Lastly update the page table
+                        pageT[message.process].pageArr[message.address / 1024].locationOfFrame = frameLocation;
+                    }
+                    //Increment the clock for a page fault
+                    clockIncrementor(clockPtr, 1000);
+                }
             }
         } 
+     
+        //Print the memory map every second showing the allocation of frames
+        if(clockPtr-> nanosec == 0)
+        {
+            if(outputLines < 100000)
+            {
+                logFrameAllocation(frameT, *clockPtr);
+                outputLines += 258;
+            }
+        }
+
     }    
     
     
@@ -321,33 +366,39 @@ void messageToProcess(int receivingProcess, int response)
     return;
 }
 
-/* Print Allocation Matrix according to the assignment sheet */
-void printAllocatedTable(int allocated2D[18][20], int processes, int resources)
+/* Return the first availble frame, if we are out return -1 */
+int findAvailFrame(frameTable *frameT)
 {
-    int mRow, mColumn;
-    fprintf(filePtr, "Allocated Matrix\n   ");
-    //Print the resource column names R0-R19
-    for(mColumn = 0; mColumn < resources; mColumn++)
+    int l;
+    for(l = 0; l < 256; l++)
     {
-        fprintf(filePtr, "R%-2d ", mColumn);
+        if(frameT[l].process == -1)
+            return l;
     }
-    fprintf(filePtr, "\n");
-    //Print the process row names P0-P17
-    for(mRow = 0; mRow < processes; mRow++)
+    return -1;
+}
+
+/* Print Allocation of Frames according to the assignment sheet */
+void logFrameAllocation(frameTable *frameT, clksim curTime)
+{
+    int m;
+    //Header for the current memory layout
+    fprintf(filePtr, "Current memory layout at time %d:%09d is:\n", curTime.sec, curTime.nanosec);
+    fprintf(filePtr, "           Occupied  RefByte  DirtyBit\n");
+    //Loop through all of the frames
+    for(m = 0; m < 256; m++)
     {
-        fprintf(filePtr, "P%-2d ", mRow);
-        //Loop through each spot in the table
-        for(mColumn = 0; mColumn < resources; mColumn++)
+        //If the process is -1, it is unoccupied
+        if(frameT[m].process < 0)
         {
-            //If the spot is not allocated, print 0
-            if(allocated2D[mRow][mColumn] == 0)
-                fprintf(filePtr, "0   ");
-            //Otherwise print the allocated value
-            else
-                fprintf(filePtr, "%-3d ", allocated2D[mRow][mColumn]);           
+            fprintf(filePtr, "Frame %3d: %-9s %-8d %-8d\n", m, "No", frameT[m].referenceBit, frameT[m].dirtyBit); 
         }
-        fprintf(filePtr, "\n");
-    }
+        //Otherwise it is occupied
+        else
+        {
+            fprintf(filePtr, "Frame %3d: %-9s %-8d %-8d\n", m, "Yes", frameT[m].referenceBit, frameT[m].dirtyBit);
+        }
+    }   
     return;
 }
 

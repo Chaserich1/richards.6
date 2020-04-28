@@ -110,9 +110,8 @@ typedef struct
     page pageArr[32]; //32 pages in the page array
 } pageTable;
 
-//Prototypes for printing table
-/*void printAllocatedTable(int allocated2D[18][20], int processes, int resources);
-void printTable(resDesc resDescPtr, int processes, int resources); 
-*/
+//Prototypes for logging frame allocation and paging functions
+int findAvailFrame(frameTable *frameT);
+void logFrameAllocation(frameTable *frameT, clksim curTime); 
 
 #endif
