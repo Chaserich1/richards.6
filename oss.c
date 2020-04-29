@@ -225,11 +225,13 @@ void manager(int maxProcsInSys, int memoryScheme)
                 if(receivedMessage == 0)
                 {
                     fprintf(filePtr, "P%d requesting read of address %d at time %d:%09d\n", message.process, message.address, clockPtr-> sec, clockPtr-> nanosec);
+                    outputLines++;
                 }
                 //Otherwise it's a write so print that to output file
                 else
                 {
                     fprintf(filePtr, "P%d requesting write of address %d at time %d:%09d\n", message.process, message.address, clockPtr-> sec, clockPtr-> nanosec);
+                    outputLines++;
                 }
                 
                 //Let's say there is no page fault (always granted for now)
@@ -241,9 +243,10 @@ void manager(int maxProcsInSys, int memoryScheme)
                         if(outputLines < 100000)
                         {
                             fprintf(filePtr, "Address %d in frame %d, giving data to P%d at time %d:%09d\n", message.address, frameLocation, message.process, clockPtr-> sec, clockPtr-> nanosec);
+                            outputLines++;
                         }
                         //Set the reference bit to 1
-                        frameT[frameLocation].referenceBit = 0x1;
+                        frameT[frameLocation].referenceBit = frameT[frameLocation].referenceBit | 0x80;
                     }
                     //Otherwise it was a write, so also set the dirty bit
                     else
@@ -254,7 +257,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                             fprintf(filePtr, "Address %d in frame %d, writing data by P%d at time %d:%09d\n", message.address, frameLocation, message.process, clockPtr-> sec, clockPtr-> nanosec);
                         }
                         //Set the reference bit to 1
-                        frameT[frameLocation].referenceBit = 0x1;
+                        frameT[frameLocation].referenceBit = frameT[frameLocation].referenceBit | 0x80;
                         //Since it was a write we also need to set the dirty bit
                         frameT[frameLocation].dirtyBit = 0x1;
                         //Log that we changed the dirty bit to the output file
@@ -264,7 +267,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                             outputLines++;
                         }         
                         //Increment the clock for the dirty bit change
-                        clockIncrementor(clockPtr, 12);
+                        clockIncrementor(clockPtr, 100);
                     }
                     //Increment the clock for no page fault - less than page fault obviously
                     clockIncrementor(clockPtr, 10);
@@ -277,14 +280,14 @@ void manager(int maxProcsInSys, int memoryScheme)
                     //Returns the available frame if there is one otherwise -1
                     int frameLocation = findAvailFrame(frameT);
                     //If there are none available we have to do second chance algorithm to replace
-                    if(frameLocation == -1)
-                    {
-                        printf("No Frames Available\n");
+                    //if(frameLocation == -1)
+                    //{
+                    //    printf("No Frames Available\n");
                         
-                    }
+                    //}
                     //Insert the frame in the available location
-                    else
-                    {
+                    //else
+                    //{
                         if(outputLines < 100000)
                         {
                             fprintf(filePtr, "Inserting P%d page into frame %d\n", message.process, frameLocation);
@@ -300,7 +303,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                             frameT[frameLocation].dirtyBit = 0x1; //write
                         //Lastly update the page table
                         pageT[message.process].pageArr[message.address / 1024].locationOfFrame = frameLocation;
-                    }
+                    //}
                     //Increment the clock for a page fault
                     clockIncrementor(clockPtr, 1000);
                 }
