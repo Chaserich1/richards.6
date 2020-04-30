@@ -113,5 +113,6 @@ typedef struct
 //Prototypes for logging frame allocation and paging functions
 int findAvailFrame(frameTable *frameT);
 void logFrameAllocation(frameTable *frameT, clksim curTime); 
+int clockReplacementPolicy(frameTable *frameT);
 
 #endif

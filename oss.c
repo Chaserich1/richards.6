@@ -180,7 +180,7 @@ void manager(int maxProcsInSys, int memoryScheme)
         {
             //printf("%d\n", message.msgDetails);
             //Increment the clock for the read/write operation
-            clockIncrementor(clockPtr, 15);
+            clockIncrementor(clockPtr, 100);
             memAccesses++;
             //Check to see if the frame is available in the page table
             int frameLocation = pageT[message.process].pageArr[message.address / 1024].locationOfFrame;
@@ -280,14 +280,37 @@ void manager(int maxProcsInSys, int memoryScheme)
                     //Returns the available frame if there is one otherwise -1
                     int frameLocation = findAvailFrame(frameT);
                     //If there are none available we have to do second chance algorithm to replace
-                    //if(frameLocation == -1)
-                    //{
-                    //    printf("No Frames Available\n");
-                        
-                    //}
+                    if(frameLocation == -1)
+                    {
+                        //printf("No Frames Available\n");
+                        frameLocation = clockReplacementPolicy(frameT);
+                        //Swap the frame into the location that was thrown out and reset reference
+                        frameT[frameLocation].process = message.process;
+                        frameT[frameLocation].referenceBit = 0x80;
+                        if(outputLines < 100000)
+                        {
+                            fprintf(filePtr, "Clearing frame %d and swapping in process P%d\n", frameLocation, message.process);
+                            outputLines++;
+                        }
+                        //Read set the dirty bit to zero
+                        if(receivedMessage == 0)
+                            frameT[frameLocation].dirtyBit = 0x0;
+                        else //Write set it to 1
+                            frameT[frameLocation].dirtyBit = 0x1;
+                        //Log that the dirty bit was set and clock incremented
+                        if(outputLines < 100000)
+                        {
+                            fprintf(filePtr, "Dirty bit of frame %d set, adding additional time to the clock\n", frameLocation);
+                            outputLines++;
+                        }
+                        //Increment the clock for setting the dirty bit
+                        clockIncrementor(clockPtr, 100);
+                        //Finish by updating the page table
+                        pageT[message.process].pageArr[message.address / 1024].locationOfFrame = frameLocation;
+                    }
                     //Insert the frame in the available location
-                    //else
-                    //{
+                    else
+                    {
                         if(outputLines < 100000)
                         {
                             fprintf(filePtr, "Inserting P%d page into frame %d\n", message.process, frameLocation);
@@ -303,7 +326,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                             frameT[frameLocation].dirtyBit = 0x1; //write
                         //Lastly update the page table
                         pageT[message.process].pageArr[message.address / 1024].locationOfFrame = frameLocation;
-                    //}
+                    }
                     //Increment the clock for a page fault
                     clockIncrementor(clockPtr, 1000);
                 }
@@ -320,13 +343,9 @@ void manager(int maxProcsInSys, int memoryScheme)
             }
         }
         //Increment the clock
-        clockIncrementor(clockPtr, 10);
+        clockIncrementor(clockPtr, 100000);
 
-    }    
-
-    fclose(filePtr);
-    shmctl(clockSegment, IPC_RMID, NULL);
-    msgctl(msgqSegment, IPC_RMID, NULL);   
+    }  
     
     return;  
 }
@@ -383,6 +402,19 @@ int findAvailFrame(frameTable *frameT)
             return l;
     }
     return -1;
+}
+
+/* Frame replacement algorithm */
+int clockReplacementPolicy(frameTable *frameT)
+{
+    int n;
+    int replacedFrameIndex = 0;
+    for(n = 0; n < 256; n++)
+    {
+        if(frameT[n].process > 0 && frameT[n].referenceBit < frameT[replacedFrameIndex].referenceBit)
+            replacedFrameIndex = n;
+    }
+    return replacedFrameIndex;
 }
 
 /* Print Allocation of Frames according to the assignment sheet */
