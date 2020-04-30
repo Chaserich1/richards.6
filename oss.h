@@ -21,6 +21,8 @@
 #include <semaphore.h>
 #include <fcntl.h>
 
+#define MAXPROCESSES 18
+
 void displayHelpMessage(); //-h getopt option
 void sigHandler(int sig); //Signal Handle(ctrl c and timeout)
 void removeAllMem(); //Removes all sharedmemory

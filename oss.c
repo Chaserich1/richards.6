@@ -10,7 +10,7 @@ char *outputLog = "logOutput.dat";
 int main(int argc, char* argv[])
 {
     int c;
-    int n = 18; //Max Children in system at once
+    int n = MAXPROCESSES; //Max Children in system at once
     int m = 1;
     srand(time(0));
     while((c = getopt(argc, argv, "hn:m:")) != -1)
@@ -246,7 +246,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                             outputLines++;
                         }
                         //Set the reference bit to 1
-                        frameT[frameLocation].referenceBit = frameT[frameLocation].referenceBit | 0x80;
+                        frameT[frameLocation].referenceBit = 0x1;
                     }
                     //Otherwise it was a write, so also set the dirty bit
                     else
@@ -284,9 +284,9 @@ void manager(int maxProcsInSys, int memoryScheme)
                     {
                         //printf("No Frames Available\n");
                         frameLocation = clockReplacementPolicy(frameT);
-                        //Swap the frame into the location that was thrown out and reset reference
+                        //Swap the frame into the location that was thrown out and set reference bit to 1
                         frameT[frameLocation].process = message.process;
-                        frameT[frameLocation].referenceBit = 0x80;
+                        frameT[frameLocation].referenceBit = 0x1;
                         if(outputLines < 100000)
                         {
                             fprintf(filePtr, "Clearing frame %d and swapping in process P%d\n", frameLocation, message.process);
@@ -318,7 +318,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                         }
                         //Insert the frame and set the reference bit
                         frameT[frameLocation].process = message.process;
-                        frameT[frameLocation].referenceBit = 0x80;
+                        frameT[frameLocation].referenceBit = 0x1;
                         //Set the dirty bit according to read or write
                         if(receivedMessage == 0)
                             frameT[frameLocation].dirtyBit = 0x0; //read
