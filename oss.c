@@ -407,14 +407,31 @@ int findAvailFrame(frameTable *frameT)
 /* Frame replacement algorithm */
 int clockReplacementPolicy(frameTable *frameT)
 {
-    int n;
+    int n = 0;
     int replacedFrameIndex = 0;
-    for(n = 0; n < 256; n++)
+    while(1)
     {
-        if(frameT[n].process > 0 && frameT[n].referenceBit < frameT[replacedFrameIndex].referenceBit)
+        //If the reference bit is 1 reset the reference bit and continue to next page
+        if(frameT[n].referenceBit == 1)
+        {
+            frameT[n].referenceBit = 0;
+            if(n == 255)
+                n = 0;
+            else
+                n++;       
+        }
+        //If it is a second chance page then it can be replaced
+        else
+        {
             replacedFrameIndex = n;
+            if(n == 255)
+                n = 0;   
+            else
+                n++;
+            //return the page to replace
+            return replacedFrameIndex;
+        }
     }
-    return replacedFrameIndex;
 }
 
 /* Print Allocation of Frames according to the assignment sheet */

@@ -102,7 +102,7 @@ typedef struct
 typedef struct
 {
     int process;
-    unsigned referenceBit: 8;
+    unsigned referenceBit: 1;
     unsigned dirtyBit: 1;
 } frameTable;
 
