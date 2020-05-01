@@ -273,7 +273,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                     if(frameLocation == -1)
                     {
                         //printf("No Frames Available\n");
-                        frameLocation = clockReplacementPolicy(frameT);
+                        frameLocation = clockReplacementPolicy(frameT, (*clockPtr));
                         //Swap the frame into the location that was thrown out and set reference bit to 1
                         frameT[frameLocation].process = message.process;
                         frameT[frameLocation].referenceBit = 0x1;
@@ -315,7 +315,7 @@ void manager(int maxProcsInSys, int memoryScheme)
         } 
      
         //Print the memory map every second showing the allocation of frames
-        if(clockPtr-> nanosec == 0)
+        if(/*outputLines % 150*/clockPtr-> nanosec == 0)
         {
             if(outputLines < 100000)
             {
@@ -388,7 +388,7 @@ int findAvailFrame(frameTable *frameT)
 }
 
 /* Frame replacement algorithm */
-int clockReplacementPolicy(frameTable *frameT)
+int clockReplacementPolicy(frameTable *frameT, clksim curTime)
 {
     int n = 0;
     int replacedFrameIndex = 0;
@@ -397,7 +397,10 @@ int clockReplacementPolicy(frameTable *frameT)
         //If the reference bit is 1 reset the reference bit and continue to next page
         if(frameT[n].referenceBit == 1)
         {
+            //reset the reference bit
             frameT[n].referenceBit = 0;
+            //set the page arrival time to the current time
+            frameT[n].arrivalTime = curTime;
             if(n == 255)
                 n = 0;
             else

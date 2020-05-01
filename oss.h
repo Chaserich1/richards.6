@@ -104,6 +104,7 @@ typedef struct
     int process;
     unsigned referenceBit: 1;
     unsigned dirtyBit: 1;
+    clksim arrivalTime;
 } frameTable;
 
 //Page table struct
@@ -115,6 +116,6 @@ typedef struct
 //Prototypes for logging frame allocation and paging functions
 int findAvailFrame(frameTable *frameT);
 void logFrameAllocation(frameTable *frameT, clksim curTime); 
-int clockReplacementPolicy(frameTable *frameT);
+int clockReplacementPolicy(frameTable *frameT, clksim curTime);
 
 #endif
