@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     /* Signal for terminating, freeing up shared mem, killing all children 
        if the program goes for more than two seconds of real clock */
     signal(SIGALRM, sigHandler);
-    alarm(2);
+    alarm(1);
 
     /* Signal for terminating, freeing up shared mem, killing all 
        children if the user enters ctrl-c */
@@ -134,7 +134,7 @@ void manager(int maxProcsInSys, int memoryScheme)
 
     //printf("ProcCounter: %d", procCounter);
     //Loop runs constantly until it has to terminate
-    while(totalProcs <= 100)/* totalProcs <= 100 */
+    while(totalProcs <= 100 && outputLines < 100000)/* totalProcs <= 100 */
     {
         //Only 18 processes in the system at once and spawn random between 0 and 500000
         if((procCounter < maxProcsInSys) && ((clockPtr-> sec > spawnNextProc.sec) || (clockPtr-> sec == spawnNextProc.sec && clockPtr-> nanosec >= spawnNextProc.nanosec)))
@@ -213,10 +213,8 @@ void manager(int maxProcsInSys, int memoryScheme)
                 //Wait for the process
                 waitpid(process, NULL, 0);
                 //Output to the file that the process terminated
-                if(outputLines < 100000)
-                {
-                    fprintf(filePtr, "P%d terminated at time %d:%09d\n", message.process, clockPtr-> sec, clockPtr-> nanosec);
-                }               
+                fprintf(filePtr, "P%d terminated at time %d:%09d\n", message.process, clockPtr-> sec, clockPtr-> nanosec);         
+                outputLines++;      
             }
             //If it's not terminating, it's either read or write
             else
@@ -240,11 +238,8 @@ void manager(int maxProcsInSys, int memoryScheme)
                     //If it was a read skip the dirty bit change
                     if(receivedMessage == 0)
                     {
-                        if(outputLines < 100000)
-                        {
-                            fprintf(filePtr, "Address %d in frame %d, giving data to P%d at time %d:%09d\n", message.address, frameLocation, message.process, clockPtr-> sec, clockPtr-> nanosec);
-                            outputLines++;
-                        }
+                        fprintf(filePtr, "Address %d in frame %d, giving data to P%d at time %d:%09d\n", message.address, frameLocation, message.process, clockPtr-> sec, clockPtr-> nanosec);
+                        outputLines++;
                         //Set the reference bit to 1
                         frameT[frameLocation].referenceBit = 0x1;
                     }
@@ -252,20 +247,15 @@ void manager(int maxProcsInSys, int memoryScheme)
                     else
                     {
                         //Output file the address and frame being giving to which process
-                        if(outputLines < 100000)
-                        {
-                            fprintf(filePtr, "Address %d in frame %d, writing data by P%d at time %d:%09d\n", message.address, frameLocation, message.process, clockPtr-> sec, clockPtr-> nanosec);
-                        }
+                        fprintf(filePtr, "Address %d in frame %d, writing data by P%d at time %d:%09d\n", message.address, frameLocation, message.process, clockPtr-> sec, clockPtr-> nanosec);
+                        outputLines++;
                         //Set the reference bit to 1
                         frameT[frameLocation].referenceBit = frameT[frameLocation].referenceBit | 0x80;
                         //Since it was a write we also need to set the dirty bit
                         frameT[frameLocation].dirtyBit = 0x1;
                         //Log that we changed the dirty bit to the output file
-                        if(outputLines < 100000)
-                        {
-                            fprintf(filePtr, "Dirty bit of frame %d set, adding additional time to the clock\n", frameLocation);
-                            outputLines++;
-                        }         
+                        fprintf(filePtr, "Dirty bit of frame %d set, adding additional time to the clock\n", frameLocation);        
+                        outputLines++; 
                         //Increment the clock for the dirty bit change
                         clockIncrementor(clockPtr, 100);
                     }
@@ -287,22 +277,16 @@ void manager(int maxProcsInSys, int memoryScheme)
                         //Swap the frame into the location that was thrown out and set reference bit to 1
                         frameT[frameLocation].process = message.process;
                         frameT[frameLocation].referenceBit = 0x1;
-                        if(outputLines < 100000)
-                        {
-                            fprintf(filePtr, "Clearing frame %d and swapping in process P%d\n", frameLocation, message.process);
-                            outputLines++;
-                        }
+                        fprintf(filePtr, "Clearing frame %d and swapping in process P%d\n", frameLocation, message.process);
+                        outputLines++;
                         //Read set the dirty bit to zero
                         if(receivedMessage == 0)
                             frameT[frameLocation].dirtyBit = 0x0;
                         else //Write set it to 1
                             frameT[frameLocation].dirtyBit = 0x1;
                         //Log that the dirty bit was set and clock incremented
-                        if(outputLines < 100000)
-                        {
-                            fprintf(filePtr, "Dirty bit of frame %d set, adding additional time to the clock\n", frameLocation);
-                            outputLines++;
-                        }
+                        fprintf(filePtr, "Dirty bit of frame %d set, adding additional time to the clock\n", frameLocation);
+                        outputLines++;
                         //Increment the clock for setting the dirty bit
                         clockIncrementor(clockPtr, 100);
                         //Finish by updating the page table
@@ -311,11 +295,8 @@ void manager(int maxProcsInSys, int memoryScheme)
                     //Insert the frame in the available location
                     else
                     {
-                        if(outputLines < 100000)
-                        {
-                            fprintf(filePtr, "Inserting P%d page into frame %d\n", message.process, frameLocation);
-                            outputLines++;
-                        }
+                        fprintf(filePtr, "Inserting P%d page into frame %d\n", message.process, frameLocation);
+                        outputLines++;
                         //Insert the frame and set the reference bit
                         frameT[frameLocation].process = message.process;
                         frameT[frameLocation].referenceBit = 0x1;
@@ -346,7 +327,9 @@ void manager(int maxProcsInSys, int memoryScheme)
         clockIncrementor(clockPtr, 100000);
 
     }  
-    
+   
+    removeAllMem();
+ 
     return;  
 }
 
