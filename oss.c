@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     /* Signal for terminating, freeing up shared mem, killing all children 
        if the program goes for more than two seconds of real clock */
     signal(SIGALRM, sigHandler);
-    alarm(1);
+    alarm(2);
 
     /* Signal for terminating, freeing up shared mem, killing all 
        children if the user enters ctrl-c */
@@ -338,9 +338,22 @@ void manager(int maxProcsInSys, int memoryScheme)
         clockIncrementor(clockPtr, 100000);
 
     }  
-   
-    removeAllMem();
- 
+
+    //Calculate and print the memory accesses per second to the console and the end of the output file
+    float memAccessesPerSec = ((float)(memAccesses) / ((float)(clockPtr-> sec) + ((float)clockPtr-> nanosec / (float)(1000000000))));
+    printf("Memory accesses per second: %f\n", memAccessesPerSec);
+    fprintf(filePtr, "Memory accesses per second: %f\n", memAccessesPerSec);
+
+    //Calculate and print the number of page faults per memory access to the console and the end of the output file
+    float pageFaultsPerMemAccess = ((float)(pageFaults) / (float)memAccesses);
+    printf("Page faults per memory access: %f\n", pageFaultsPerMemAccess);
+    fprintf(filePtr, "Page faults per memory access: %f\n", pageFaultsPerMemAccess);
+
+    //Calculate the average memory access speed
+    float avgMemAccessSpeed = (((float)(clockPtr-> sec) + ((float)clockPtr-> nanosec / (float)(1000000000))) / ((float)memAccesses));
+    printf("Average memory access speed: %f\n", avgMemAccessSpeed);
+    fprintf(filePtr, "Average memory access speed: %f\n", avgMemAccessSpeed);
+
     return;  
 }
 
