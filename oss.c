@@ -94,7 +94,7 @@ void manager(int maxProcsInSys, int memoryScheme)
     int memAccesses = 0;
     int pageFaults = 0;
 
-    int i, j; //For loops
+    int i, j, k; //For loops
     int processExec; //exec  nd check for failurei
     int procPid; //generated pid
     int pid; //actual pid
@@ -108,6 +108,17 @@ void manager(int maxProcsInSys, int memoryScheme)
     pidArr = (int *)malloc(sizeof(int) * maxProcsInSys);
     for(i = 0; i < maxProcsInSys; i++)
         pidArr[i] = -1;
+
+    if(memoryScheme == 1)
+    {
+        //Initialize the array of weights
+        float weightValue;
+        for(k = 1; k <= 32; k++)
+        {
+            weightValue = 1 / (float)k;
+            clockPtr-> arrOfWeights[k - 1] = weightValue;
+        }
+    }
 
     //Allocate the frame table as an array
     frameTable *frameT = (frameTable *)malloc(sizeof(frameTable) * 256);

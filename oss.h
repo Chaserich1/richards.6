@@ -61,6 +61,7 @@ typedef struct
 {
     unsigned int sec;
     unsigned int nanosec;
+    float arrOfWeights[32];
 } clksim;
 
 //Increment the clock so if it reaches a second in nanoseconds it changes accordingly and increment time

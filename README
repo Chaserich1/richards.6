@@ -12,9 +12,9 @@ $ export PATH="$PATH:."
 
 To Run (Default option values or using options):
 
-$ ./
+$ ./oss
 or
-$ ./
+$ ./oss -n 10 -m 1
 
 To remove all .o, .dat and the executables:
 

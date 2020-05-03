@@ -28,7 +28,6 @@ int main(int argc, char *argv[])
     //Will be used for messaging with oss
     int procPid, scheme;
     //Array of weights - one value for each page
-    float arrOfWeights[32];
     float lastValue;
     int pageToRequest, memoryAddress;
     //Passed the message queue segment id through execl
@@ -77,14 +76,15 @@ int main(int argc, char *argv[])
         while(1)
         {
             memReferences++; //Increment the number of memory references
+            
             //Add the each index of the array to the preceding value
             int i;
             for(i = 0; i < 31; i++)
             {
-                arrOfWeights[i + 1] += arrOfWeights[i];
+                clockPtr-> arrOfWeights[i + 1] += clockPtr-> arrOfWeights[i];
             }
             //Store the lastValue in the array of weights
-            lastValue = arrOfWeights[i];
+            lastValue = clockPtr-> arrOfWeights[i];
             //Generate a random number from 0 to the last value
             int randomValue = (rand() % (int)lastValue + 1);
             //Travel down the array until a value greater than randomValue is found
@@ -92,10 +92,10 @@ int main(int argc, char *argv[])
             for(j = 0; j < 32; j++)
             {
                 //If randomValue is less than a weight
-                if(randomValue < arrOfWeights[j])
+                if(randomValue < clockPtr-> arrOfWeights[j])
                 {
                     //The page to request is the index of the greater value
-                    pageToRequest = arrOfWeights[j];
+                    pageToRequest = j;
                     break;
                 }
             }
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
             //Generate a random offset between 0 and 1023
             int offset = rand() % 1023;
             //To get the memory address add the two values
-            memoryAddress = newValue * offset;
+            memoryAddress = newValue + offset;
             
             //Every 1000 +- 100 memory references check if it should terminate
             if(memReferences % randMemRefCheck == 0)
