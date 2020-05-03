@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
 {
     int c;
     int n = MAXPROCESSES; //Max Children in system at once
-    int m = 1;
+    int m = 0;
     srand(time(0));
     while((c = getopt(argc, argv, "hn:m:")) != -1)
     {
