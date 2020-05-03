@@ -27,6 +27,10 @@ int main(int argc, char *argv[])
  
     //Will be used for messaging with oss
     int procPid, scheme;
+    //Array of weights - one value for each page
+    float arrOfWeights[32];
+    float lastValue;
+    int pageToRequest, memoryAddress;
     //Passed the message queue segment id through execl
     msgqSegment = atoi(argv[1]);
     //Passed the generated process id through execl
@@ -40,6 +44,7 @@ int main(int argc, char *argv[])
     srand(time(0));
     int randMemRefCheck = (rand() % (1100 - 900 + 1)) + 900;
     
+    //First memory request scheme
     if(scheme == 0)
     {
         //Continuous loop until it's time to terminate
@@ -65,6 +70,62 @@ int main(int argc, char *argv[])
             messageToOss(procPid, firstScheme(), readOrWrite);
         }
     }
+    //Second memory request scheme (1/n)
+    else
+    {
+        //Continuous loop until it's time to terminate
+        while(1)
+        {
+            memReferences++; //Increment the number of memory references
+            //Add the each index of the array to the preceding value
+            int i;
+            for(i = 0; i < 31; i++)
+            {
+                arrOfWeights[i + 1] += arrOfWeights[i];
+            }
+            //Store the lastValue in the array of weights
+            lastValue = arrOfWeights[i];
+            //Generate a random number from 0 to the last value
+            int randomValue = (rand() % (int)lastValue + 1);
+            //Travel down the array until a value greater than randomValue is found
+            int j;
+            for(j = 0; j < 32; j++)
+            {
+                //If randomValue is less than a weight
+                if(randomValue < arrOfWeights[j])
+                {
+                    //The page to request is the index of the greater value
+                    pageToRequest = arrOfWeights[j];
+                    break;
+                }
+            }
+            //Now have a page to request but need offset
+            //Multiply the page by 1024
+            int newValue = pageToRequest * 1024;
+            //Generate a random offset between 0 and 1023
+            int offset = rand() % 1023;
+            //To get the memory address add the two values
+            memoryAddress = newValue * offset;
+            
+            //Every 1000 +- 100 memory references check if it should terminate
+            if(memReferences % randMemRefCheck == 0)
+            {
+                //Random value to check if it should terminate
+                if(rand() % 10 > 4)
+                {
+                    //Send termination message to oss and actually terminate
+                    messageToOss(procPid, 0, 2);
+                    return 0;               
+                }
+            }   
+     
+            //Read or write with bias towards read
+            int readOrWrite = rand() % 5 > 0 ? 0 : 1; 
+            //Send the message to Oss with the second scheme 
+            messageToOss(procPid, memoryAddress, readOrWrite);        
+        }   
+    } 
+    
 
     return 0;
 }
