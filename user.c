@@ -24,6 +24,10 @@ int main(int argc, char *argv[])
         perror("user: Error: Failed to attach clock (shmat)");
         exit(EXIT_FAILURE);
     }      
+
+    //Semaphore Declarations
+    sem_t* sem;
+    char *semaphoreName = "semUser";
  
     //Will be used for messaging with oss
     int procPid, scheme;
@@ -67,6 +71,18 @@ int main(int argc, char *argv[])
         
             //Send the message to Oss with the first scheme 
             messageToOss(procPid, firstScheme(), readOrWrite);
+
+            //Open the semaphore and increment the shared clock
+            sem = sem_open(semaphoreName, O_CREAT, 0700, 1);    
+            if(sem == SEM_FAILED)
+            {
+                perror("user: Error: Failed to open semaphore\n");
+                exit(EXIT_FAILURE);
+            }
+            //Increment clock
+            clockIncrementor(clockPtr, 10000);
+            //Signal semaphore
+            sem_unlink(semaphoreName);
         }
     }
     //Second memory request scheme (1/n)
@@ -122,7 +138,19 @@ int main(int argc, char *argv[])
             //Read or write with bias towards read
             int readOrWrite = rand() % 5 > 0 ? 0 : 1; 
             //Send the message to Oss with the second scheme 
-            messageToOss(procPid, memoryAddress, readOrWrite);        
+            messageToOss(procPid, memoryAddress, readOrWrite);     
+
+            //Open the semaphore and increment the shared memory clock
+            sem = sem_open(semaphoreName, O_CREAT, 0700, 1);    
+            if(sem == SEM_FAILED)
+            {
+                perror("user: Error: Failed to open semaphore\n");
+                exit(EXIT_FAILURE);
+            }
+            //Increment clock
+            clockIncrementor(clockPtr, 10000);
+            //Signal semaphore
+            sem_unlink(semaphoreName);   
         }   
     } 
     

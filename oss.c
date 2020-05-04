@@ -83,8 +83,8 @@ void manager(int maxProcsInSys, int memoryScheme)
     }
     msg message;
 
-    //sem_t *sem;
-    //char *semaphoreName = "semOss";
+    sem_t *sem;
+    char *semaphoreName = "semOss";
 
     int outputLines = 0; //Counts the lines written to file to make sure we don't have an infinite loop
     int procCounter = 0; //Counts the processes
@@ -145,7 +145,7 @@ void manager(int maxProcsInSys, int memoryScheme)
 
     //printf("ProcCounter: %d", procCounter);
     //Loop runs constantly until it has to terminate
-    while(totalProcs <= 100 && outputLines < 100000)/* totalProcs <= 100 */
+    while(totalProcs <= 100 && outputLines < 100000)
     {
         //Only 18 processes in the system at once and spawn random between 0 and 500000
         if((procCounter < maxProcsInSys) && ((clockPtr-> sec > spawnNextProc.sec) || (clockPtr-> sec == spawnNextProc.sec && clockPtr-> nanosec >= spawnNextProc.nanosec)))
@@ -267,11 +267,19 @@ void manager(int maxProcsInSys, int memoryScheme)
                         //Log that we changed the dirty bit to the output file
                         fprintf(filePtr, "Dirty bit of frame %d set, adding additional time to the clock\n", frameLocation);        
                         outputLines++; 
+                        //Open the semaphore
+                        sem = sem_open(semaphoreName, O_CREAT, 0644, 1);
                         //Increment the clock for the dirty bit change
                         clockIncrementor(clockPtr, 100);
+                        //Signal the semaphore
+                        sem_post(sem);
                     }
+                    //Open the semaphore
+                    sem = sem_open(semaphoreName, O_CREAT, 0644, 1);
                     //Increment the clock for no page fault - less than page fault obviously
                     clockIncrementor(clockPtr, 10);
+                    //Signal the semaphore
+                    sem_post(sem);
                 }
                 //If there is a page fault
                 else
@@ -298,8 +306,12 @@ void manager(int maxProcsInSys, int memoryScheme)
                         //Log that the dirty bit was set and clock incremented
                         fprintf(filePtr, "Dirty bit of frame %d set, adding additional time to the clock\n", frameLocation);
                         outputLines++;
+                        //Open the semaphore
+                        sem = sem_open(semaphoreName, O_CREAT, 0644, 1);
                         //Increment the clock for setting the dirty bit
                         clockIncrementor(clockPtr, 100);
+                        //Signal the semaphore
+                        sem_post(sem);
                         //Finish by updating the page table
                         pageT[message.process].pageArr[message.address / 1024].locationOfFrame = frameLocation;
                     }
@@ -319,8 +331,12 @@ void manager(int maxProcsInSys, int memoryScheme)
                         //Lastly update the page table
                         pageT[message.process].pageArr[message.address / 1024].locationOfFrame = frameLocation;
                     }
+                    //Open the semaphore
+                    sem = sem_open(semaphoreName, O_CREAT, 0644, 1);
                     //Increment the clock for a page fault
                     clockIncrementor(clockPtr, 1000);
+                    //Signal the semaphore
+                    sem_post(sem);
                 }
             }
         } 
@@ -334,9 +350,17 @@ void manager(int maxProcsInSys, int memoryScheme)
                 outputLines += 258;
             }
         }
-        //Increment the clock
+        //Open the semaphore and increment the clock
+        sem = sem_open(semaphoreName, O_CREAT, 0644, 1);    
+        if(sem == SEM_FAILED)
+        {
+            perror("user: Error: Failed to open semaphore\n");
+            exit(EXIT_FAILURE);
+        }
+        //Increment clock
         clockIncrementor(clockPtr, 100000);
-
+        //Signal semaphore
+        sem_post(sem);
     }  
 
     //Calculate and print the memory accesses per second to the console and the end of the output file
@@ -354,6 +378,7 @@ void manager(int maxProcsInSys, int memoryScheme)
     printf("Average memory access speed: %f\n", avgMemAccessSpeed);
     fprintf(filePtr, "Average memory access speed: %f\n", avgMemAccessSpeed);
 
+    removeAllMem();
     return;  
 }
 
@@ -467,14 +492,6 @@ void logFrameAllocation(frameTable *frameT, clksim curTime)
     }   
     return;
 }
-
-/* Function for printing the allocated values (will be called roughly every 20 granted requests)
-void printTable(resDesc resDescPtr, int processes, int resources)
-{
-    printAllocatedTable(resDescPtr.allocated2D, processes, resources);
-    return;
-}
-*/
 
 /* Open the log file that contains the output and check for failure */
 FILE *openLogFile(char *file)
