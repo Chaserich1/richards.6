@@ -146,7 +146,7 @@ void manager(int maxProcsInSys, int memoryScheme)
 
     //printf("ProcCounter: %d", procCounter);
     //Loop runs constantly until it has to terminate
-    while(totalProcs <= 100 && outputLines < 100000)
+    while(totalProcs <= 100 && outputLines < 120000)
     {
         //Only 18 processes in the system at once and spawn random between 0 and 500000
         if((procCounter < maxProcsInSys) && ((clockPtr-> sec > spawnNextProc.sec) || (clockPtr-> sec == spawnNextProc.sec && clockPtr-> nanosec >= spawnNextProc.nanosec)))
@@ -438,7 +438,11 @@ int findAvailFrame(frameTable *frameT)
     return -1;
 }
 
-/* Frame replacement algorithm */
+/* Frame replacement algorithm if the ref is 0 then it can be replaced, if ref bit is 1 reset it to 0 
+   and continue to the next page, the reference bit would be 1 if it has been referred to in the past, 
+   to give the second chance reset the ref bit and set the arrival time to the current time, the ref 
+   bit would be 0 if it had not been ref in a while. Page is eligible for replacement if it has a ref bit
+   of 0 either originally or due to the algorithm giving the page a second chance and resetting the ref bit */
 int clockReplacementPolicy(frameTable *frameT, clksim curTime)
 {
     int n = 0;
@@ -452,14 +456,17 @@ int clockReplacementPolicy(frameTable *frameT, clksim curTime)
             frameT[n].referenceBit = 0;
             //set the page arrival time to the current time
             frameT[n].arrivalTime = curTime;
+            //Reset n to 0 if it goes through all the pages
             if(n == 255)
                 n = 0;
+            //Otherwise increment it to the next page index
             else
                 n++;       
         }
-        //If it is a second chance page then it can be replaced
+        //If it has a ref bit of 0 or is a second chance page then it can be replaced
         else
         {
+            //Set n to the index of the replaceable page
             replacedFrameIndex = n;
             if(n == 255)
                 n = 0;   
@@ -484,12 +491,12 @@ void logFrameAllocation(frameTable *frameT, clksim curTime)
         //If the process is -1, it is unoccupied
         if(frameT[m].process < 0)
         {
-            fprintf(filePtr, "Frame %3d: %-9s %-8d %-8d\n", m, "No", frameT[m].referenceBit, frameT[m].dirtyBit); 
+            fprintf(filePtr, "Frame %3d: %-9s %-8d %-8d\n", m, ".", frameT[m].referenceBit, frameT[m].dirtyBit); 
         }
         //Otherwise it is occupied
         else
         {
-            fprintf(filePtr, "Frame %3d: %-9s %-8d %-8d\n", m, "Yes", frameT[m].referenceBit, frameT[m].dirtyBit);
+            fprintf(filePtr, "Frame %3d: %-9s %-8d %-8d\n", m, "+", frameT[m].referenceBit, frameT[m].dirtyBit);
         }
     }   
     return;
@@ -510,7 +517,7 @@ FILE *openLogFile(char *file)
 /* When there is a failure, call this to make sure all memory is removed */
 void removeAllMem()
 {
-    //shmctl(resDescSegment, IPC_RMID, NULL);   
+    //printStats();   
     shmctl(clockSegment, IPC_RMID, NULL);
     msgctl(msgqSegment, IPC_RMID, NULL);
     sem_unlink("semOss");
@@ -523,11 +530,18 @@ void removeAllMem()
 /* Print the final statistics to the console and the end of the file - will be called in signal handler
 void printStats()
 {
-    printf("Total Granted Requests: %d\n", granted);
-    printf("Total Normal Terminations: %d\n", normalTerminations);
-    printf("Total Deadlock Algorithm Runs: %d\n", deadlockAlgRuns);
-    printf("Total Deadlock Terminations: %d\n", deadlockTerminations);
-    printf("Pecentage of processes in deadlock that had to terminate on avg: %d%\n", divideNums(deadlockTerminations, totalCounter));
+    //Calculate and print the memory accesses per second to the console and the end of the output file
+    float memAccessesPerSec = ((float)(memAccesses) / ((float)(clockPtr-> sec) + ((float)clockPtr-> nanosec / (float)(1000000000))));
+    printf("Memory accesses per second: %f\n", memAccessesPerSec);
+    fprintf(filePtr, "Memory accesses per second: %f\n", memAccessesPerSec);
+    //Calculate and print the number of page faults per memory access to the console and the end of the output file
+    float pageFaultsPerMemAccess = ((float)(pageFaults) / (float)memAccesses);
+    printf("Page faults per memory access: %f\n", pageFaultsPerMemAccess);
+    fprintf(filePtr, "Page faults per memory access: %f\n", pageFaultsPerMemAccess);
+    //Calculate the average memory access speed
+    float avgMemAccessSpeed = (((float)(clockPtr-> sec) + ((float)clockPtr-> nanosec / (float)(1000000000))) / ((float)memAccesses));
+    printf("Average memory access speed: %f\n", avgMemAccessSpeed);
+    fprintf(filePtr, "Average memory access speed: %f\n", avgMemAccessSpeed);
 }
 */
 

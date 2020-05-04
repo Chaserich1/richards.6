@@ -37,7 +37,10 @@ Comments on page replacement algorithm on both page request schemes:
 
 Additional Project Information:
 
-
+1.I limited my output file to 120,000 lines so the output wouldn't become too large
+and I also have the 2 seconds of real time or 100 processes limit.
+2.For the current memory layout printing, I display unallocated frames with a period
+and allocated frames with + based on what it says to do in the assignment sheet.
 
 -------------------------------------------------------------------------------
 
