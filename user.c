@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             //Increment clock
-            clockIncrementor(clockPtr, 10000);
+            clockIncrementor(clockPtr, 1000);
             //Signal semaphore
             sem_unlink(semaphoreName);
         }
@@ -161,18 +161,11 @@ int main(int argc, char *argv[])
 /* Message being sent to oss for read write or terminating */
 void messageToOss(int curProcess, int address, int details)
 {
-    int sendmessage;
     /* Send the message to oss with type 1 and it's a request */
     msg message = {.typeofMsg = 20, .process = curProcess, .address = address, .msgDetails = details};
-    
     /* Send the message and check for failure */
-    sendmessage = msgsnd(msgqSegment, &message, sizeof(msg), 0);
-    if(sendmessage == -1)
-    {
-        perror("user: Error: Failed to send message (msgsnd)\n");
-        exit(EXIT_FAILURE);
-    }
-        
+    msgsnd(msgqSegment, &message, sizeof(msg), 0);
+          
     return;
 }
 

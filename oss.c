@@ -71,7 +71,7 @@ void manager(int maxProcsInSys, int memoryScheme)
  
     /* Constant for the time between each new process and the time for
        spawning the next process, initially spawning one process */   
-    clksim maxTimeBetweenNewProcesses = {.sec = 0, .nanosec = 500000};
+    clksim maxTimeBetweenNewProcesses = {.sec = 0, .nanosec = 500000000};
     clksim spawnNextProc = {.sec = 0, .nanosec = 0};
 
     /* Create the message queue */
@@ -88,6 +88,7 @@ void manager(int maxProcsInSys, int memoryScheme)
 
     int outputLines = 0; //Counts the lines written to file to make sure we don't have an infinite loop
     int procCounter = 0; //Counts the processes
+    int printCounter = 1; //For printing every second
 
     //Statistics
     int totalProcs = 0;
@@ -182,7 +183,7 @@ void manager(int maxProcsInSys, int memoryScheme)
             //Get the time for the next process to run
             spawnNextProc = nextProcessStartTime(maxTimeBetweenNewProcesses, (*clockPtr));
    
-            clockIncrementor(clockPtr, 1000000);  
+            clockIncrementor(clockPtr, 100000000);  
         }
         /* Receive a message from a process, if it is non zero, return immediately,
            if it is zero wait for a message of the oss type to be placed on the queue 
@@ -191,7 +192,7 @@ void manager(int maxProcsInSys, int memoryScheme)
         {
             //printf("%d\n", message.msgDetails);
             //Increment the clock for the read/write operation
-            clockIncrementor(clockPtr, 100);
+            clockIncrementor(clockPtr, 1000);
             memAccesses++;
             //Check to see if the frame is available in the page table
             int frameLocation = pageT[message.process].pageArr[message.address / 1024].locationOfFrame;
@@ -261,7 +262,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                         fprintf(filePtr, "Address %d in frame %d, writing data by P%d at time %d:%09d\n", message.address, frameLocation, message.process, clockPtr-> sec, clockPtr-> nanosec);
                         outputLines++;
                         //Set the reference bit to 1
-                        frameT[frameLocation].referenceBit = frameT[frameLocation].referenceBit | 0x80;
+                        frameT[frameLocation].referenceBit = 0x1;
                         //Since it was a write we also need to set the dirty bit
                         frameT[frameLocation].dirtyBit = 0x1;
                         //Log that we changed the dirty bit to the output file
@@ -276,7 +277,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                     }
                     //Open the semaphore
                     sem = sem_open(semaphoreName, O_CREAT, 0644, 1);
-                    //Increment the clock for no page fault - less than page fault obviously
+                    //Increment the clock for no page fault - less than page fault 
                     clockIncrementor(clockPtr, 10);
                     //Signal the semaphore
                     sem_post(sem);
@@ -309,7 +310,7 @@ void manager(int maxProcsInSys, int memoryScheme)
                         //Open the semaphore
                         sem = sem_open(semaphoreName, O_CREAT, 0644, 1);
                         //Increment the clock for setting the dirty bit
-                        clockIncrementor(clockPtr, 100);
+                        clockIncrementor(clockPtr, 1000);
                         //Signal the semaphore
                         sem_post(sem);
                         //Finish by updating the page table
@@ -342,13 +343,14 @@ void manager(int maxProcsInSys, int memoryScheme)
         } 
      
         //Print the memory map every second showing the allocation of frames
-        if(/*outputLines % 150*/clockPtr-> nanosec == 0)
+        if(clockPtr-> sec == printCounter)
         {
             if(outputLines < 100000)
             {
                 logFrameAllocation(frameT, *clockPtr);
                 outputLines += 258;
             }
+            printCounter++;
         }
         //Open the semaphore and increment the clock
         sem = sem_open(semaphoreName, O_CREAT, 0644, 1);    
@@ -358,7 +360,7 @@ void manager(int maxProcsInSys, int memoryScheme)
             exit(EXIT_FAILURE);
         }
         //Increment clock
-        clockIncrementor(clockPtr, 100000);
+        clockIncrementor(clockPtr, 1000000);
         //Signal semaphore
         sem_post(sem);
     }  
