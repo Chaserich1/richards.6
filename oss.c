@@ -368,10 +368,13 @@ void manager(int maxProcsInSys, int memoryScheme)
             exit(EXIT_FAILURE);
         }
         //Increment clock
-        clockIncrementor(clockPtr, 1000000);
+        clockIncrementor(clockPtr, 1400000);
         //Signal semaphore
         sem_post(sem);
     }  
+
+    printf("\nStatistics of Interest:\n");
+    fprintf(filePtr, "\nStatistics of Interest:\n");
 
     //Calculate and print the memory accesses per second to the console and the end of the output file
     float memAccessesPerSec = ((float)(memAccesses) / ((float)(clockPtr-> sec) + ((float)clockPtr-> nanosec / (float)(1000000000))));
