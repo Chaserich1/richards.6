@@ -31,7 +31,18 @@ https://github.com/Chaserich1/richards.6
 --------------------------------------------------------------------------------
 
 Comments on page replacement algorithm on both page request schemes:
-  
+
+I found that the page replacement algorithm on the first scheme had more page faults
+compared to the second scheme. The number of memory accesses per second was on average
+10-100 more using the first scheme than the second, which would be due to the clock 
+incrementations and the time it takes to determine a memory address using the second 
+scheme compared to the first which simply generates a random number between 0 and
+total memory. I adjusted my clock incrementations multiple times, and ultimatley
+left it so there would be close to 1000 memory accesses per second but that could 
+easily be changed by increasing or decreasing the clock incrementations. For the second
+chance algorithm, it is best case if we find a reference bit of zero for a page not
+referred to in a while and we can replace that page. Worst case is when all of the reference
+bits are set to 1 and degenerates to fifo replacement.   
 
 --------------------------------------------------------------------------------
 
@@ -41,6 +52,7 @@ Additional Project Information:
 and I also have the 2 seconds of real time or 100 processes limit.
 2.For the current memory layout printing, I display unallocated frames with a period
 and allocated frames with + based on what it says to do in the assignment sheet.
+3.I implemented synchronization using message queues for each process.
 
 -------------------------------------------------------------------------------
 

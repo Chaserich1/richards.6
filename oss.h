@@ -87,6 +87,21 @@ clksim subTime(clksim time1, clksim time2)
     return sub;
 }
 
+/* ------------------------------------Queue Setup----------------------------------------- */
+
+/* Queue struct and prototypes */
+typedef struct
+{
+    unsigned int capacity;
+    unsigned int items;
+    unsigned int front;
+    unsigned int back;
+    int *arr;
+} questrt;
+
+questrt *queueCreation(int capacity);
+void enqueue(questrt *queuePtr, int pid);
+int dequeue(questrt *queuePtr);
 
 //Start time for the next process (between 1 and 500 milliseconds)
 clksim nextProcessStartTime(clksim maxTime, clksim curTime);

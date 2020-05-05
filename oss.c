@@ -110,6 +110,8 @@ void manager(int maxProcsInSys, int memoryScheme)
     for(i = 0; i < maxProcsInSys; i++)
         pidArr[i] = -1;
 
+    int pageSize = 1024;
+ 
     if(memoryScheme == 1)
     {
         //Initialize the array of weights
@@ -139,7 +141,9 @@ void manager(int maxProcsInSys, int memoryScheme)
         for(j = 0; j < 32; j++)
             pageT[i].pageArr[j].locationOfFrame = -1;
     }
-   
+  
+    //Create the queue wait queue for swapping out a process
+    questrt *circQueue = queueCreation(maxProcsInSys); 
 
     //Printing starting
     printf("Program Starting\n");
@@ -195,7 +199,7 @@ void manager(int maxProcsInSys, int memoryScheme)
             clockIncrementor(clockPtr, 1000);
             memAccesses++;
             //Check to see if the frame is available in the page table
-            int frameLocation = pageT[message.process].pageArr[message.address / 1024].locationOfFrame;
+            int frameLocation = pageT[message.process].pageArr[message.address / pageSize].locationOfFrame;
             //The message will either be 0,1,2 (read,write,or terminate)
             int receivedMessage = message.msgDetails;   
             //If the message is to terminate
@@ -287,6 +291,8 @@ void manager(int maxProcsInSys, int memoryScheme)
                 {
                     //increment the page fault stat
                     pageFaults++;
+                    //Queue the request for device
+                    enqueue(circQueue, message.process);
                     //Returns the available frame if there is one otherwise -1
                     int frameLocation = findAvailFrame(frameT);
                     //If there are none available we have to do second chance algorithm to replace
@@ -314,11 +320,13 @@ void manager(int maxProcsInSys, int memoryScheme)
                         //Signal the semaphore
                         sem_post(sem);
                         //Finish by updating the page table
-                        pageT[message.process].pageArr[message.address / 1024].locationOfFrame = frameLocation;
+                        pageT[message.process].pageArr[message.address / pageSize].locationOfFrame = frameLocation;
                     }
                     //Insert the frame in the available location
                     else
                     {
+                        //Fullfil the request at the head of the queue
+                        dequeue(circQueue);
                         fprintf(filePtr, "Inserting P%d page into frame %d\n", message.process, frameLocation);
                         outputLines++;
                         //Insert the frame and set the reference bit
@@ -329,8 +337,8 @@ void manager(int maxProcsInSys, int memoryScheme)
                             frameT[frameLocation].dirtyBit = 0x0; //read
                         else
                             frameT[frameLocation].dirtyBit = 0x1; //write
-                        //Lastly update the page table
-                        pageT[message.process].pageArr[message.address / 1024].locationOfFrame = frameLocation;
+                        //Lastly update the page table getting the page from the address / 1024
+                        pageT[message.process].pageArr[message.address / pageSize].locationOfFrame = frameLocation;
                     }
                     //Open the semaphore
                     sem = sem_open(semaphoreName, O_CREAT, 0644, 1);
@@ -456,22 +464,22 @@ int clockReplacementPolicy(frameTable *frameT, clksim curTime)
             frameT[n].referenceBit = 0;
             //set the page arrival time to the current time
             frameT[n].arrivalTime = curTime;
-            //Reset n to 0 if it goes through all the pages
-            if(n == 255)
-                n = 0;
-            //Otherwise increment it to the next page index
+            //Increment n to the next page and continue checking
+            if(n != 255)
+                n++;
+            //Otherwise reset n to zero if it has gone through all pages
             else
-                n++;       
+                n = 0;       
         }
         //If it has a ref bit of 0 or is a second chance page then it can be replaced
         else
         {
             //Set n to the index of the replaceable page
             replacedFrameIndex = n;
-            if(n == 255)
-                n = 0;   
+            if(n != 255)
+                n++;   
             else
-                n++;
+                n = 0;
             //return the page to replace
             return replacedFrameIndex;
         }
@@ -500,6 +508,40 @@ void logFrameAllocation(frameTable *frameT, clksim curTime)
         }
     }   
     return;
+}
+
+/* Create the queue and set the capacity and the number of items*/
+questrt *queueCreation(int capacity)
+{
+    int i;
+    questrt *queuePtr = (questrt *)malloc(sizeof(questrt));
+    queuePtr-> items = 0;
+    queuePtr-> front = 0;
+    queuePtr-> back = 0;
+    queuePtr-> capacity = capacity;
+    queuePtr-> arr = (int *)malloc(capacity * sizeof(int));
+    for(i = 0; i < capacity; i++)
+        queuePtr-> arr[i] = -1;
+    return queuePtr;
+}
+
+/* Add a process to the queue and update the number of items in the queue*/
+void enqueue(questrt *queuePtr, int pid)
+{
+    queuePtr-> items += 1;
+    queuePtr-> arr[queuePtr-> back] = pid;
+    queuePtr-> back = (queuePtr-> back + 1) % queuePtr-> capacity;
+    return;
+}
+
+/* Remove a process from the queue and update the number of items in the queue*/
+int dequeue(questrt *queuePtr)
+{
+    int pid;
+    queuePtr-> items -= 1;
+    pid = queuePtr-> arr[queuePtr-> front];
+    queuePtr-> front = (queuePtr-> front + 1) % queuePtr-> capacity;
+    return pid;
 }
 
 /* Open the log file that contains the output and check for failure */

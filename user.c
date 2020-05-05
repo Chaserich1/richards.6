@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
             if(memReferences % randMemRefCheck == 0)
             {
                 //Random value to check if it should terminate
-                if(rand() % 10 > 4)
+                if(rand() % 100 > 50)
                 {
                     //Send termination message to oss and actually terminate
                     messageToOss(procPid, 0, 2);
